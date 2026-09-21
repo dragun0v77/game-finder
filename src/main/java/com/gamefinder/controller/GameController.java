@@ -2,6 +2,11 @@ package com.gamefinder.controller;
 
 import com.gamefinder.model.Game;
 import com.gamefinder.service.GameService;
+import com.gamefinder.exception.ApiException;
+import com.gamefinder.exception.ErrorResponse;
+import com.gamefinder.exception.GameNotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.sun.net.httpserver.HttpExchange; //Класс, представляющий один HTTP-обмен (запрос и ответ) между клиентом и сервером
 import com.sun.net.httpserver.HttpHandler; //Интерфейс, который обязывает класс реализовать метод
 import java.io.IOException;
@@ -14,8 +19,8 @@ import java.util.List;
 
 public class GameController implements HttpHandler {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(GameController.class);
     private final GameService gameService = new GameService();
-
 
     @Override
     public void handle(HttpExchange exchange) throws IOException { //принимает объект с запросом и ответом
@@ -53,8 +58,15 @@ public class GameController implements HttpHandler {
             sendResponse(exchange, 200, jsonResponse);
         }
 
-        catch (Exception e) {
-            sendResponse(exchange, 500, "{\"error\": \"Внутренняя ошибка сервера\"}");
+        catch (GameNotFoundException e) {
+            LOGGER.warn("Игры не найдены: {}", e.getMessage());
+            sendErrorResponse(exchange, 404, e.getMessage());
+        } catch (ApiException e) {
+            LOGGER.error("Ошибка API: {}", e.getMessage());
+            sendErrorResponse(exchange, 503, e.getMessage());
+        } catch (Exception e) {
+            LOGGER.error("Внутренняя ошибка сервера", e);
+            sendErrorResponse(exchange, 500, "Внутренняя ошибка сервера");
         }
 
     }
@@ -100,5 +112,14 @@ public class GameController implements HttpHandler {
         try (OutputStream os = exchange.getResponseBody()) {
             os.write(response.getBytes(StandardCharsets.UTF_8));
         }
+    }
+
+    private void sendErrorResponse(HttpExchange exchange, int statusCode, String message) throws IOException {
+        ErrorResponse error = new ErrorResponse(statusCode, message);
+        JSONObject json = new JSONObject();
+        json.put("status", error.getStatus());
+        json.put("message", error.getMessage());
+        json.put("timestamp", error.getTimestamp());
+        sendResponse(exchange, statusCode, json.toString());
     }
 }

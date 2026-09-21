@@ -1,5 +1,6 @@
 package com.gamefinder.client;
 
+import com.gamefinder.exception.ApiException;
 import com.gamefinder.config.AppConfig;
 import com.gamefinder.model.Game;
 import org.slf4j.Logger;
@@ -46,8 +47,7 @@ public class RawgApiClient {
             // Проверяем статус ответа
 
             if (response.statusCode() != 200) {
-                LOGGER.error("RAWG API вернул ошибку: {}", response.statusCode());
-                return new ArrayList<>();
+                throw new ApiException("RAWG API вернул ошибку: " + response.statusCode());
             }
             // Возвращаем ответ
             return parseGames(response.body());
@@ -55,7 +55,7 @@ public class RawgApiClient {
 
         catch (Exception e) {
             LOGGER.error("Ошибка при запросе к RAWG API: ", e);
-            return new ArrayList<>();
+            throw new ApiException("Ошибка при запросе к RAWG API: " + e.getMessage());
         }
     }
 
@@ -91,6 +91,7 @@ public class RawgApiClient {
 
         catch (Exception e) {
             LOGGER.error("Ошибка при парсинге JSON: ", e);
+            throw new ApiException("Ошибка при парсинге JSON: " + e.getMessage());
         }
 
         return games;

@@ -1,5 +1,6 @@
 package com.gamefinder.service;
 
+import com.gamefinder.exception.GameNotFoundException;
 import com.gamefinder.model.Game;
 import com.gamefinder.client.RawgApiClient;
 import org.slf4j.Logger;
@@ -32,10 +33,13 @@ public class GameService {
         LOGGER.info("ПРОМАХ КЭША для запроса: {}. Загрузка из RAWG API...", query);
         List<Game> games = rawgClient.fetchGames(cleanQuery);
 
-        // 3. Сохраняем в кэш
-        if (games != null && !games.isEmpty()) {
-            cache.put(cleanQuery, games);
+        // Если игр нет — выбрасываем исключение
+        if (games == null || games.isEmpty()) {
+            throw new GameNotFoundException("Игры по запросу '" + query + "' не найдены");
         }
+
+        // 3. Сохраняем в кэш
+        cache.put(cleanQuery, games);
 
         return games;
     }
