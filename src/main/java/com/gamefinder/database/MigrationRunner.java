@@ -10,7 +10,7 @@ import java.sql.Statement;
 
 public class MigrationRunner {
     public static void main(String[] args) throws IOException, SQLException {
-        String sql = Files.readString(Path.of("src/main/resources/db/migration/V1__Create_users_table.sql"));
+        String sql = Files.readString(Path.of("src/main/resources/db/migration/V2__Create_ratings_table.sql"));
 
         Connection testConnection = DatabaseConnection.getInstance().getConnection();
 
